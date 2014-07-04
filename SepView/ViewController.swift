@@ -2,40 +2,86 @@
 //  ViewController.swift
 //  SepView
 //
-//  Created by えいる on 2014/06/06.
-//  Copyright (c) 2014年 Tomohiko Himura. All rights reserved.
+//  Copyright (c) 2014 Tomohiko Himura. All rights reserved.
 //
 
 import UIKit
 import QuartzCore
 import CoreMotion
 
+func randf() -> CGFloat {
+    return CGFloat(rand()) / CGFloat(RAND_MAX)
+}
+
+class BoxViewCreator {
+    let animator: UIDynamicAnimator
+    let view: UIView = UIView()
+
+    init () {
+        animator = UIDynamicAnimator(referenceView: view)
+    }
+
+    func createView(gravity: UIGravityBehavior) {
+        UIViewAutoresizing.None;
+
+        animator.addBehavior(gravity)
+        var objs: UIView[] = []
+        for i in 1..10 {
+            let obj = UIView()
+            let red: CGFloat = randf()
+            let green: CGFloat = randf()
+            let blue: CGFloat = randf()
+            let width: CGFloat = randf() * 10 + 14
+            let height: CGFloat = randf() * 10 + 14
+            obj.frame = CGRectMake(CGFloat(i),CGFloat(i),width,height)
+            obj.backgroundColor = UIColor(red: red, green: green, blue: blue, alpha: 0.4);
+            view.addSubview(obj)
+            gravity.addItem(obj)
+            objs.append(obj)
+        }
+        
+        let collison = UICollisionBehavior(items:objs)
+        collison.translatesReferenceBoundsIntoBoundary = true
+        animator.addBehavior(collison)
+    }
+}
+
 class ViewController: UIViewController {
-    let wrapView = UIView(frame: CGRectMake(0,0,40,100))
     var imageViews: UIImageView[] = []
-    var animator: UIDynamicAnimator? = nil
-    let gravity: UIGravityBehavior = UIGravityBehavior()
     let motionManager: CMMotionManager = CMMotionManager()
-    
-    class func capturedImageWithView (aView: UIView) -> UIImage {
-        UIGraphicsBeginImageContextWithOptions(aView.bounds.size, false, 0)
+    let gravity: UIGravityBehavior = UIGravityBehavior()
+    let gravity2: UIGravityBehavior = UIGravityBehavior()
+    let creator: BoxViewCreator = BoxViewCreator()
+    let creator2: BoxViewCreator = BoxViewCreator()
+
+    class func capturedImageWithView (views: UIView[]) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(views[0].bounds.size, false, 0)
         let ctx = UIGraphicsGetCurrentContext()
-        let pt = aView.layer.frame.origin
         CGContextSaveGState(ctx)
-        CGContextTranslateCTM(ctx, pt.x, pt.y)
-        let layer : AnyObject! = aView.layer
-        layer.renderInContext(ctx)
+        for view : UIView in views {
+            let layer : AnyObject! = view.layer
+            layer.renderInContext(ctx)
+            CGContextTranslateCTM(ctx, views[0].bounds.size.width/2, views[0].bounds.size.height/2)
+            CGContextRotateCTM(ctx, 3.1415925)
+            CGContextTranslateCTM(ctx, -views[0].bounds.size.width/2, -views[0].bounds.size.height/2)
+        }
         let tempImg = UIGraphicsGetImageFromCurrentImageContext();
         CGContextRestoreGState(ctx);
         UIGraphicsEndImageContext();
         return tempImg;
     }
 
+    init(coder aDecoder: NSCoder!) {
+        super.init(coder: aDecoder)
+    }
                             
     override func viewDidLoad() {
         super.viewDidLoad()
+        srand(CUnsignedInt(time(nil)))
         // Do any additional setup after loading the view, typically from a nib.
         motionManager.accelerometerUpdateInterval = 0.01;
+        creator.createView(gravity)
+        creator2.createView(gravity2)
         
         let handler: CMAccelerometerHandler = { data, error in
             let x: CDouble = data.acceleration.x
@@ -45,50 +91,30 @@ class ViewController: UIViewController {
             if (x != 0) {
                 self.gravity.angle = CGFloat(atan2(-y, x))
                 self.gravity.magnitude = CGFloat(sqrt(y*y + x*x))
+                self.gravity2.angle = CGFloat(atan2(-y, x))
+                self.gravity2.magnitude = CGFloat(sqrt(y*y + x*x))
 //                NSLog("angle: %f, magnitude: %f", self.gravity.angle, self.gravity.magnitude);
             }
         };
-        
-        // センサーの利用開始
+
         motionManager.startAccelerometerUpdatesToQueue(NSOperationQueue.currentQueue(), withHandler:handler)
         
-        // (不必要になったら)センサーの停止
         if (motionManager.accelerometerActive) {
-            motionManager.stopAccelerometerUpdates();
+//            motionManager.stopAccelerometerUpdates();
+        } else {
+//            self.gravity.magnitude = 1;
         }
         
         let displayLink = CADisplayLink(target: self, selector: "loop:")
         displayLink.addToRunLoop(NSRunLoop.currentRunLoop(), forMode: NSRunLoopCommonModes)
 
-        wrapView.autoresizingMask = UIViewAutoresizing.None
-        wrapView.backgroundColor = UIColor.blackColor()
-        self.view.addSubview(wrapView)
-        
-        
-        animator = UIDynamicAnimator(referenceView: wrapView)
-        
-        animator?.addBehavior(gravity)
-        var objs: UIView[] = []
-        for i in 1..40 {
-            let obj = UIView()
-            let red: CGFloat = CGFloat(rand()) / CGFloat(RAND_MAX)
-            let green: CGFloat = CGFloat(rand()) / CGFloat(RAND_MAX)
-            let blue: CGFloat = CGFloat(rand()) / CGFloat(RAND_MAX)
-            let width: CGFloat = CGFloat(rand()) / CGFloat(RAND_MAX) * 10
-            let height: CGFloat = CGFloat(rand()) / CGFloat(RAND_MAX) * 10
-            obj.frame = CGRectMake(10,10,width,height)
-            obj.backgroundColor = UIColor(red: red, green: green, blue: blue, alpha: 0.9);
-            wrapView.addSubview(obj)
-            gravity.addItem(obj)
-            objs.append(obj)
-        }
+        creator.view.frame = CGRectMake(0, 0, 100, 100)
+        self.view.addSubview(creator.view)
+        creator2.view.frame = CGRectMake(100, 0, 100, 100)
+        self.view.addSubview(creator2.view)
 
-        let collison = UICollisionBehavior(items:objs)
-        collison.translatesReferenceBoundsIntoBoundary = true
-        animator?.addBehavior(collison)
-        
         let size = 24
-        let imageRect = CGRect(x: 80,y: 100,width: 100,height: 100);
+        let imageRect = CGRect(x: 140,y: 100,width: 40,height: 100);
         for i in 0..size {
             let imageView = UIImageView()
             imageView.frame = imageRect
@@ -104,13 +130,13 @@ class ViewController: UIViewController {
     }
     
     func loop(link: CADisplayLink) {
-        let image = ViewController.capturedImageWithView(wrapView)
+        let image = ViewController.capturedImageWithView([creator.view,creator2.view])
         var n: CGFloat = 0
-        let transform = CGAffineTransformMakeTranslation(50, 50);
+        let transform = CGAffineTransformMakeTranslation(0, 100);
         for imageView in imageViews {
             imageView.image = image
             let angle:CGFloat = n * CGFloat(M_PI) / 180.0;
-            imageView.transform = CGAffineTransformTranslate(CGAffineTransformRotate(transform, angle), -50,-50)
+            imageView.transform = CGAffineTransformTranslate(CGAffineTransformRotate(transform, angle), 0,-100)
             n += 360 / CGFloat(imageViews.count)
         }
     }
