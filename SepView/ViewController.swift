@@ -25,16 +25,16 @@ class BoxViewCreator {
         UIViewAutoresizing.None;
 
         animator.addBehavior(gravity)
-        var objs: UIView[] = []
-        for i in 1..10 {
+        var objs: [UIView] = []
+        for i in 1..<10 {
             let obj = UIView()
-            let red: CGFloat = randf()
-            let green: CGFloat = randf()
-            let blue: CGFloat = randf()
+            let red: CGFloat = randf() * 0.4 + 0.6
+            let green: CGFloat = randf() * 0.4 + 0.6
+            let blue: CGFloat = randf() * 0.4 + 0.6
             let width: CGFloat = randf() * 10 + 14
             let height: CGFloat = randf() * 10 + 14
             obj.frame = CGRectMake(CGFloat(i),CGFloat(i),width,height)
-            obj.backgroundColor = UIColor(red: red, green: green, blue: blue, alpha: 0.4);
+            obj.backgroundColor = UIColor(red: red, green: green, blue: blue, alpha: 0.8);
             view.addSubview(obj)
             gravity.addItem(obj)
             objs.append(obj)
@@ -47,14 +47,15 @@ class BoxViewCreator {
 }
 
 class ViewController: UIViewController {
-    var imageViews: UIImageView[] = []
+    var imageViews: [UIImageView] = []
     let motionManager: CMMotionManager = CMMotionManager()
     let gravity: UIGravityBehavior = UIGravityBehavior()
     let gravity2: UIGravityBehavior = UIGravityBehavior()
     let creator: BoxViewCreator = BoxViewCreator()
     let creator2: BoxViewCreator = BoxViewCreator()
+    var secondWindow: UIWindow? = nil;
 
-    class func capturedImageWithView (views: UIView[]) -> UIImage {
+    class func capturedImageWithView (views: [UIView]) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(views[0].bounds.size, false, 0)
         let ctx = UIGraphicsGetCurrentContext()
         CGContextSaveGState(ctx)
@@ -78,6 +79,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         srand(CUnsignedInt(time(nil)))
+        self.view.backgroundColor = UIColor.blackColor()
         // Do any additional setup after loading the view, typically from a nib.
         motionManager.accelerometerUpdateInterval = 0.01;
         creator.createView(gravity)
@@ -115,7 +117,7 @@ class ViewController: UIViewController {
 
         let size = 24
         let imageRect = CGRect(x: 140,y: 100,width: 40,height: 100);
-        for i in 0..size {
+        for i in 0..<size {
             let imageView = UIImageView()
             imageView.frame = imageRect
             self.view.addSubview(imageView)
