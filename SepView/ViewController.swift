@@ -16,33 +16,41 @@ func randf() -> CGFloat {
 class BoxViewCreator {
     let animator: UIDynamicAnimator
     let view: UIView = UIView()
+    let gravity: UIGravityBehavior = UIGravityBehavior()
 
     init () {
         animator = UIDynamicAnimator(referenceView: view)
     }
 
-    func createView(gravity: UIGravityBehavior) {
+    func createView() {
         UIViewAutoresizing.None;
-
         animator.addBehavior(gravity)
         var objs: [UIView] = []
-        for i in 1..<10 {
+        for i in 1..<5 {
             let obj = UIView()
             let red: CGFloat = randf() * 0.4 + 0.6
             let green: CGFloat = randf() * 0.4 + 0.6
             let blue: CGFloat = randf() * 0.4 + 0.6
             let width: CGFloat = randf() * 10 + 14
             let height: CGFloat = randf() * 10 + 14
-            obj.frame = CGRectMake(CGFloat(i),CGFloat(i),width,height)
+            obj.frame = CGRectMake(CGFloat(i+14),CGFloat(i+14),width,height)
             obj.backgroundColor = UIColor(red: red, green: green, blue: blue, alpha: 0.8);
             view.addSubview(obj)
             gravity.addItem(obj)
             objs.append(obj)
         }
-        
         let collison = UICollisionBehavior(items:objs)
         collison.translatesReferenceBoundsIntoBoundary = true
         animator.addBehavior(collison)
+    }
+
+    func accelerometerHandler(data: CMAccelerometerData!,error: NSError! ) {
+        let x: CDouble = data.acceleration.x
+        let y: CDouble = data.acceleration.y
+        if x != 0 {
+            gravity.angle = CGFloat(atan2(-y, x))
+            gravity.magnitude = CGFloat(sqrt(y*y + x*x))
+        }
     }
 }
 
@@ -50,21 +58,19 @@ class ViewController: UIViewController {
     let mainView: UIView = UIView()
     var imageViews: [UIImageView] = []
     let motionManager: CMMotionManager = CMMotionManager()
-    let gravity: UIGravityBehavior = UIGravityBehavior()
-    let gravity2: UIGravityBehavior = UIGravityBehavior()
-    let creator: BoxViewCreator = BoxViewCreator()
-    let creator2: BoxViewCreator = BoxViewCreator()
-    var secondWindow: UIWindow? = nil;
+    let creators: [BoxViewCreator] = [BoxViewCreator(), BoxViewCreator()]
+    var secondWindow: UIWindow? = nil
 
     class func capturedImageWithView (views: [UIView]) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(views[0].bounds.size, false, 0)
         let ctx = UIGraphicsGetCurrentContext()
         CGContextSaveGState(ctx)
+        CGContextSetBlendMode(ctx,kCGBlendModePlusLighter)
         for view : UIView in views {
             let layer : AnyObject! = view.layer
             layer.renderInContext(ctx)
             CGContextTranslateCTM(ctx, views[0].bounds.size.width/2, views[0].bounds.size.height/2)
-            CGContextRotateCTM(ctx, 3.1415925)
+            CGContextRotateCTM(ctx, M_PI)
             CGContextTranslateCTM(ctx, -views[0].bounds.size.width/2, -views[0].bounds.size.height/2)
         }
         let tempImg = UIGraphicsGetImageFromCurrentImageContext();
@@ -84,39 +90,35 @@ class ViewController: UIViewController {
         srand(CUnsignedInt(time(nil)))
         self.view.backgroundColor = UIColor.blackColor()
         // Do any additional setup after loading the view, typically from a nib.
-        motionManager.accelerometerUpdateInterval = 0.01;
-        creator.createView(gravity)
-        creator2.createView(gravity2)
+        motionManager.accelerometerUpdateInterval = 0.04;
+        for creator: BoxViewCreator in creators {
+           creator.createView();
+        }
+
         
         let handler: CMAccelerometerHandler = { data, error in
-            let x: CDouble = data.acceleration.x
-            let y: CDouble = data.acceleration.y
-            let z: CDouble = data.acceleration.z
-//            NSLog("x: %f, y: %f, z: %f", x, y, z);
-            if (x != 0) {
-                self.gravity.angle = CGFloat(atan2(-y, x))
-                self.gravity.magnitude = CGFloat(sqrt(y*y + x*x))
-                self.gravity2.angle = CGFloat(atan2(-y, x))
-                self.gravity2.magnitude = CGFloat(sqrt(y*y + x*x))
-//                NSLog("angle: %f, magnitude: %f", self.gravity.angle, self.gravity.magnitude);
+            for creator: BoxViewCreator in self.creators {
+                creator.accelerometerHandler(data, error: error)
             }
-        };
+        }
 
         motionManager.startAccelerometerUpdatesToQueue(NSOperationQueue.currentQueue(), withHandler:handler)
         
-        if (motionManager.accelerometerActive) {
-//            motionManager.stopAccelerometerUpdates();
+        if (self.motionManager.accelerometerActive) {
+            NSLog("実機");
         } else {
-//            self.gravity.magnitude = 1;
+            NSLog("シミュレータ");
         }
         
         let displayLink = CADisplayLink(target: self, selector: "loop:")
         displayLink.addToRunLoop(NSRunLoop.currentRunLoop(), forMode: NSRunLoopCommonModes)
 
-        creator.view.frame = CGRectMake(0, 0, 100, 100)
-        self.view.addSubview(creator.view)
-        creator2.view.frame = CGRectMake(100, 0, 100, 100)
-        self.view.addSubview(creator2.view)
+        var x: CGFloat = 0
+        for creator: BoxViewCreator in creators {
+            creator.view.frame = CGRectMake(x, 0, 100, 100)
+            self.view.addSubview(creator.view)
+            x += 100
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -125,7 +127,8 @@ class ViewController: UIViewController {
     }
     
     func loop(link: CADisplayLink) {
-        let image = ViewController.capturedImageWithView([creator.view,creator2.view])
+        let views: [UIView] = creators.map{ (var creator) -> UIView in return creator.view}
+        let image: UIImage = ViewController.capturedImageWithView(views)
         for imageView in imageViews {
             imageView.image = image
         }
@@ -136,13 +139,14 @@ class ViewController: UIViewController {
         secondWindow = UIWindow(frame: screenBounds)
         secondWindow!.screen = newScreen
         secondWindow!.hidden = false
-        mainView.frame = newScreen.bounds
         secondWindow!.addSubview(mainView)
 
-        let size = 18
-        let width = newScreen.bounds.width > newScreen.bounds.height ? newScreen.bounds.height : newScreen.bounds.width
-        let imageRect = CGRect(x: newScreen.bounds.width / 2,y: newScreen.bounds.height / 8,width: 80,height: width/4)
+        var viewWidth = newScreen.bounds.width > newScreen.bounds.height ? newScreen.bounds.height : newScreen.bounds.width
+        viewWidth *= 0.90
+        mainView.frame = CGRectMake((newScreen.bounds.width - viewWidth)/2, (newScreen.bounds.height - viewWidth) / 2, viewWidth, viewWidth)
+        let imageRect = CGRect(x: viewWidth / 4, y: 0, width: viewWidth/2, height: viewWidth/2)
         var n: CGFloat = 0
+        let size = 12
         for i in 0..<size {
             let imageView = UIImageView()
             imageView.frame = imageRect
@@ -150,9 +154,12 @@ class ViewController: UIViewController {
             imageViews.append(imageView)
 
             let height = imageView.frame.height
-            let transform = CGAffineTransformMakeTranslation(0, width/4);
+            var transform = CGAffineTransformMakeTranslation(0, viewWidth/4);
             let angle:CGFloat = n * CGFloat(M_PI) / 180.0;
-            imageView.transform = CGAffineTransformTranslate(CGAffineTransformRotate(transform, angle), 0,-width/4)
+            transform = CGAffineTransformRotate(transform, angle)
+            transform = CGAffineTransformTranslate(transform, 0,-viewWidth/4)
+            let toggle = i % 2
+            imageView.transform = CGAffineTransformRotate(transform, CGFloat(M_PI) * CGFloat(toggle) / 2)
             n += 360 / CGFloat(size)
         }
     }
@@ -180,4 +187,3 @@ class ViewController: UIViewController {
     func handleScreenDidDisconnectNotification(notification: NSNotification) {
     }
 }
-
