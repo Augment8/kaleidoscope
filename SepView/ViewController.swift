@@ -70,7 +70,7 @@ class ViewController: UIViewController {
             let layer : AnyObject! = view.layer
             layer.renderInContext(ctx)
             CGContextTranslateCTM(ctx, views[0].bounds.size.width/2, views[0].bounds.size.height/2)
-            CGContextRotateCTM(ctx, M_PI)
+            CGContextRotateCTM(ctx, CGFloat(M_PI))
             CGContextTranslateCTM(ctx, -views[0].bounds.size.width/2, -views[0].bounds.size.height/2)
         }
         let tempImg = UIGraphicsGetImageFromCurrentImageContext();
@@ -101,10 +101,19 @@ class ViewController: UIViewController {
                 creator.accelerometerHandler(data, error: error)
             }
         }
-
         motionManager.startAccelerometerUpdatesToQueue(NSOperationQueue.currentQueue(), withHandler:handler)
+
+        let motionHandler: CMDeviceMotionHandler = { motion, error in
+            self.mainView.transform = CGAffineTransformMakeRotation(CGFloat(motion.attitude.yaw))
+            let color: UIColor = UIColor(hue: CGFloat(motion.attitude.pitch), saturation: 1, brightness: 0.2, alpha: 1)
+            if let window = self.secondWindow? {
+                window.backgroundColor = color
+            }
+        }
+        motionManager.startDeviceMotionUpdatesToQueue(NSOperationQueue.currentQueue(), withHandler:motionHandler)
+
         
-        if (self.motionManager.accelerometerActive) {
+        if (self.motionManager.accelerometerAvailable) {
             NSLog("実機");
         } else {
             NSLog("シミュレータ");
@@ -140,13 +149,21 @@ class ViewController: UIViewController {
         secondWindow!.screen = newScreen
         secondWindow!.hidden = false
         secondWindow!.addSubview(mainView)
+        createMainView(newScreen.bounds)
+    }
 
-        var viewWidth = newScreen.bounds.width > newScreen.bounds.height ? newScreen.bounds.height : newScreen.bounds.width
+    func createMainView(newBounds: CGRect) {
+        for subview in mainView.subviews as [UIView] {
+            subview.removeFromSuperview()
+        }
+        imageViews = []
+
+        var viewWidth = newBounds.width > newBounds.height ? newBounds.height : newBounds.width
         viewWidth *= 0.90
-        mainView.frame = CGRectMake((newScreen.bounds.width - viewWidth)/2, (newScreen.bounds.height - viewWidth) / 2, viewWidth, viewWidth)
+        mainView.frame = CGRectMake((newBounds.width - viewWidth)/2, (newBounds.height - viewWidth) / 2, viewWidth, viewWidth)
         let imageRect = CGRect(x: viewWidth / 4, y: 0, width: viewWidth/2, height: viewWidth/2)
         var n: CGFloat = 0
-        let size = 12
+        let size = 8
         for i in 0..<size {
             let imageView = UIImageView()
             imageView.frame = imageRect
@@ -185,5 +202,8 @@ class ViewController: UIViewController {
     }
 
     func handleScreenDidDisconnectNotification(notification: NSNotification) {
+        secondWindow = nil;
+        createMainView(self.view.frame)
+        self.view.addSubview(mainView)
     }
 }
