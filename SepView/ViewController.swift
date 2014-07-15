@@ -17,15 +17,16 @@ class BoxViewCreator {
     let animator: UIDynamicAnimator
     let view: UIView = UIView()
     let gravity: UIGravityBehavior = UIGravityBehavior()
+    var objs: [UIView] = []
+    var collison: UICollisionBehavior = UICollisionBehavior()
 
     init () {
         animator = UIDynamicAnimator(referenceView: view)
+        animator.addBehavior(gravity)
     }
 
     func createView() {
         UIViewAutoresizing.None;
-        animator.addBehavior(gravity)
-        var objs: [UIView] = []
         for i in 1..<5 {
             let obj = UIView()
             let red: CGFloat = randf() * 0.4 + 0.6
@@ -37,9 +38,9 @@ class BoxViewCreator {
             obj.backgroundColor = UIColor(red: red, green: green, blue: blue, alpha: 0.8);
             view.addSubview(obj)
             gravity.addItem(obj)
+            collison.addItem(obj)
             objs.append(obj)
         }
-        let collison = UICollisionBehavior(items:objs)
         collison.translatesReferenceBoundsIntoBoundary = true
         animator.addBehavior(collison)
     }
@@ -51,6 +52,15 @@ class BoxViewCreator {
             gravity.angle = CGFloat(atan2(-y, x))
             gravity.magnitude = CGFloat(sqrt(y*y + x*x))
         }
+    }
+
+    func reset() {
+        for obj in objs {
+            obj.removeFromSuperview()
+            gravity.removeItem(obj)
+            collison.removeItem(obj)
+        }
+        objs.removeAll(keepCapacity: false)
     }
 }
 
@@ -65,7 +75,7 @@ class ViewController: UIViewController {
         UIGraphicsBeginImageContextWithOptions(views[0].bounds.size, false, 0)
         let ctx = UIGraphicsGetCurrentContext()
         CGContextSaveGState(ctx)
-        CGContextSetBlendMode(ctx,kCGBlendModePlusLighter)
+        CGContextSetBlendMode(ctx,kCGBlendModeXOR)
         for view : UIView in views {
             let layer : AnyObject! = view.layer
             layer.renderInContext(ctx)
@@ -88,7 +98,6 @@ class ViewController: UIViewController {
         setUpScreenConnectionNotificationHandlers()
         checkForExistingScreenAndInitilaizePresent()
         srand(CUnsignedInt(time(nil)))
-        self.view.backgroundColor = UIColor.blackColor()
         // Do any additional setup after loading the view, typically from a nib.
         motionManager.accelerometerUpdateInterval = 0.04;
         for creator: BoxViewCreator in creators {
@@ -163,7 +172,7 @@ class ViewController: UIViewController {
         mainView.frame = CGRectMake((newBounds.width - viewWidth)/2, (newBounds.height - viewWidth) / 2, viewWidth, viewWidth)
         let imageRect = CGRect(x: viewWidth / 4, y: 0, width: viewWidth/2, height: viewWidth/2)
         var n: CGFloat = 0
-        let size = 8
+        let size = 7
         for i in 0..<size {
             let imageView = UIImageView()
             imageView.frame = imageRect
@@ -175,7 +184,7 @@ class ViewController: UIViewController {
             let angle:CGFloat = n * CGFloat(M_PI) / 180.0;
             transform = CGAffineTransformRotate(transform, angle)
             transform = CGAffineTransformTranslate(transform, 0,-viewWidth/4)
-            let toggle = i % 2
+            let toggle = 0 % 2
             imageView.transform = CGAffineTransformRotate(transform, CGFloat(M_PI) * CGFloat(toggle) / 2)
             n += 360 / CGFloat(size)
         }
@@ -185,6 +194,9 @@ class ViewController: UIViewController {
         if UIScreen.screens().count > 1 {
             let newScreen: UIScreen = UIScreen.screens()[1] as UIScreen
             setupWindow(newScreen)
+        } else {
+            createMainView(self.view.frame)
+            self.view.addSubview(mainView)
         }
     }
 
@@ -205,5 +217,18 @@ class ViewController: UIViewController {
         secondWindow = nil;
         createMainView(self.view.frame)
         self.view.addSubview(mainView)
+    }
+
+    @IBAction func tapAdd(sender: AnyObject) {
+        for creator in creators {
+            creator.createView()
+        }
+    }
+
+    @IBAction func tapReset(sender: AnyObject) {
+        for creator in creators {
+            creator.reset()
+            creator.createView()
+        }
     }
 }
