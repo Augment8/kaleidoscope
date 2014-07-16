@@ -27,15 +27,14 @@ class BoxViewCreator {
 
     func createView() {
         UIViewAutoresizing.None;
-        for i in 1..<5 {
+        let size = 4
+        let saturation: CGFloat = randf()
+        for i in 0..<size {
             let obj = UIView()
-            let red: CGFloat = randf() * 0.4 + 0.6
-            let green: CGFloat = randf() * 0.4 + 0.6
-            let blue: CGFloat = randf() * 0.4 + 0.6
-            let width: CGFloat = randf() * 10 + 14
-            let height: CGFloat = randf() * 10 + 14
+            let width: CGFloat = randf() * 15 + 10
+            let height: CGFloat = randf() * 15 + 10
             obj.frame = CGRectMake(CGFloat(i+14),CGFloat(i+14),width,height)
-            obj.backgroundColor = UIColor(red: red, green: green, blue: blue, alpha: 0.8);
+            obj.backgroundColor = UIColor(hue: randf() , saturation: 0.3, brightness: 0.7, alpha: 0.6)
             view.addSubview(obj)
             gravity.addItem(obj)
             collison.addItem(obj)
@@ -68,14 +67,15 @@ class ViewController: UIViewController {
     let mainView: UIView = UIView()
     var imageViews: [UIImageView] = []
     let motionManager: CMMotionManager = CMMotionManager()
-    let creators: [BoxViewCreator] = [BoxViewCreator(), BoxViewCreator()]
+    let creators: [BoxViewCreator] = [BoxViewCreator(),BoxViewCreator()]
     var secondWindow: UIWindow? = nil
+    var size: NSInteger = 1
 
     class func capturedImageWithView (views: [UIView]) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(views[0].bounds.size, false, 0)
         let ctx = UIGraphicsGetCurrentContext()
         CGContextSaveGState(ctx)
-        CGContextSetBlendMode(ctx,kCGBlendModeXOR)
+        CGContextSetBlendMode(ctx,kCGBlendModePlusLighter)
         for view : UIView in views {
             let layer : AnyObject! = view.layer
             layer.renderInContext(ctx)
@@ -98,36 +98,28 @@ class ViewController: UIViewController {
         setUpScreenConnectionNotificationHandlers()
         checkForExistingScreenAndInitilaizePresent()
         srand(CUnsignedInt(time(nil)))
+        self.view.backgroundColor = UIColor.blackColor()
         // Do any additional setup after loading the view, typically from a nib.
         motionManager.accelerometerUpdateInterval = 0.04;
         for creator: BoxViewCreator in creators {
            creator.createView();
         }
 
-        
-        let handler: CMAccelerometerHandler = { data, error in
-            for creator: BoxViewCreator in self.creators {
-                creator.accelerometerHandler(data, error: error)
-            }
-        }
-        motionManager.startAccelerometerUpdatesToQueue(NSOperationQueue.currentQueue(), withHandler:handler)
-
-        let motionHandler: CMDeviceMotionHandler = { motion, error in
-            self.mainView.transform = CGAffineTransformMakeRotation(CGFloat(motion.attitude.yaw))
-            let color: UIColor = UIColor(hue: CGFloat(motion.attitude.pitch), saturation: 1, brightness: 0.2, alpha: 1)
-            if let window = self.secondWindow? {
-                window.backgroundColor = color
-            }
-        }
-        motionManager.startDeviceMotionUpdatesToQueue(NSOperationQueue.currentQueue(), withHandler:motionHandler)
-
-        
         if (self.motionManager.accelerometerAvailable) {
-            NSLog("実機");
-        } else {
-            NSLog("シミュレータ");
+            let handler: CMAccelerometerHandler = { data, error in
+                for creator: BoxViewCreator in self.creators {
+                    creator.accelerometerHandler(data, error: error)
+                }
+            }
+            motionManager.startAccelerometerUpdatesToQueue(NSOperationQueue.currentQueue(), withHandler:handler)
+            
+            let motionHandler: CMDeviceMotionHandler = { motion, error in
+                self.mainView.transform = CGAffineTransformMakeRotation(CGFloat(motion.attitude.yaw))
+                let color: UIColor = UIColor(hue: CGFloat(motion.attitude.pitch), saturation: 0.3, brightness: 0.2, alpha: 1)
+                self.mainView.backgroundColor = color
+            }
+            motionManager.startDeviceMotionUpdatesToQueue(NSOperationQueue.currentQueue(), withHandler:motionHandler)
         }
-        
         let displayLink = CADisplayLink(target: self, selector: "loop:")
         displayLink.addToRunLoop(NSRunLoop.currentRunLoop(), forMode: NSRunLoopCommonModes)
 
@@ -145,6 +137,11 @@ class ViewController: UIViewController {
     }
     
     func loop(link: CADisplayLink) {
+        if (!motionManager.accelerometerAvailable) {
+            for creator in creators {
+                creator.gravity.angle += CGFloat(randf()) * 0.5 + 0.4
+            }
+        }
         let views: [UIView] = creators.map{ (var creator) -> UIView in return creator.view}
         let image: UIImage = ViewController.capturedImageWithView(views)
         for imageView in imageViews {
@@ -162,11 +159,48 @@ class ViewController: UIViewController {
     }
 
     func createMainView(newBounds: CGRect) {
+        mainView.transform = CGAffineTransformIdentity
         for subview in mainView.subviews as [UIView] {
             subview.removeFromSuperview()
         }
         imageViews = []
+        createMainViewForGrid(newBounds)
+    }
 
+    func createMainViewForGrid(newBounds: CGRect) {
+        var viewWidth = newBounds.width > newBounds.height ? newBounds.height : newBounds.width
+        viewWidth *= 0.7
+        mainView.frame = CGRectMake((newBounds.width - viewWidth)/2, (newBounds.height - viewWidth) / 2, viewWidth, viewWidth)
+        for i in 0..<size {
+            for j in 0..<size {
+                let imageView = UIImageView()
+                mainView.addSubview(imageView)
+                imageViews.append(imageView)
+                let width = viewWidth / CGFloat(size)
+                let imageRect = CGRect(x: CGFloat(i) * width, y: CGFloat(j) * width, width: width, height: width)
+                imageView.frame = imageRect
+                var transform: CGAffineTransform = CGAffineTransformIdentity
+                if i % 2 == 1 {
+                    transform = CGAffineTransformScale(transform, -1, 1)
+                }
+                if j % 2 == 1 {
+                    transform = CGAffineTransformScale(transform, 1, -1)
+                }
+                imageView.transform = transform
+                let center: CGFloat = CGFloat(size) / 2
+                let center_2: CGFloat = center * center
+                let i_2: CGFloat = CGFloat(i+1) - center
+                let j_2: CGFloat = CGFloat(j+1) - center
+                let alpha: CGFloat = 1 - (abs(i_2) + abs(j_2)) / CGFloat(size)
+                NSLog("%f %f %d %f", i_2, j_2, size, alpha)
+                if (size != 1) {
+                    imageView.alpha = alpha
+                }
+            }
+        }
+    }
+
+    func createMainViewForCircle(newBounds: CGRect) {
         var viewWidth = newBounds.width > newBounds.height ? newBounds.height : newBounds.width
         viewWidth *= 0.90
         mainView.frame = CGRectMake((newBounds.width - viewWidth)/2, (newBounds.height - viewWidth) / 2, viewWidth, viewWidth)
@@ -178,7 +212,7 @@ class ViewController: UIViewController {
             imageView.frame = imageRect
             mainView.addSubview(imageView)
             imageViews.append(imageView)
-
+            
             let height = imageView.frame.height
             var transform = CGAffineTransformMakeTranslation(0, viewWidth/4);
             let angle:CGFloat = n * CGFloat(M_PI) / 180.0;
@@ -211,6 +245,18 @@ class ViewController: UIViewController {
         if (!secondWindow) {
             setupWindow(newScreen)
         }
+    }
+
+    @IBAction func tapPlus(sender: AnyObject) {
+        size += 1
+        createMainView(mainView.superview.frame)
+    }
+
+    @IBAction func tapMinus(sender: AnyObject) {
+        if size > 1 {
+            size -= 1
+        }
+        createMainView(mainView.superview.frame)
     }
 
     func handleScreenDidDisconnectNotification(notification: NSNotification) {
