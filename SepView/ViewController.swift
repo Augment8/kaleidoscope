@@ -31,8 +31,8 @@ class BoxViewCreator {
         let saturation: CGFloat = randf()
         for i in 0..<size {
             let obj = UIView()
-            let width: CGFloat = randf() * 15 + 10
-            let height: CGFloat = randf() * 15 + 10
+            let width: CGFloat = randf() * 20 + 5
+            let height: CGFloat = randf() * 20 + 5
             obj.frame = CGRectMake(CGFloat(i+14),CGFloat(i+14),width,height)
             obj.backgroundColor = UIColor(hue: randf() , saturation: 0.3, brightness: 0.7, alpha: 0.6)
             view.addSubview(obj)
@@ -49,7 +49,7 @@ class BoxViewCreator {
         let y: CDouble = data.acceleration.y
         if x != 0 {
             gravity.angle = CGFloat(atan2(-y, x))
-            gravity.magnitude = CGFloat(sqrt(y*y + x*x))
+            gravity.magnitude = CGFloat(sqrt(y*y + x*x)) * 0.2
         }
     }
 
@@ -115,7 +115,7 @@ class ViewController: UIViewController {
             
             let motionHandler: CMDeviceMotionHandler = { motion, error in
                 self.mainView.transform = CGAffineTransformMakeRotation(CGFloat(motion.attitude.yaw))
-                let color: UIColor = UIColor(hue: CGFloat(motion.attitude.pitch), saturation: 0.3, brightness: 0.2, alpha: 1)
+                let color: UIColor = UIColor(hue: 0, saturation: 0, brightness: CGFloat(motion.attitude.pitch) * 0.2, alpha: 1)
                 self.mainView.backgroundColor = color
             }
             motionManager.startDeviceMotionUpdatesToQueue(NSOperationQueue.currentQueue(), withHandler:motionHandler)
@@ -165,11 +165,11 @@ class ViewController: UIViewController {
         }
         imageViews = []
         createMainViewForGrid(newBounds)
+//        createMainViewForCircle(newBounds)
     }
 
     func createMainViewForGrid(newBounds: CGRect) {
         var viewWidth = newBounds.width > newBounds.height ? newBounds.height : newBounds.width
-        viewWidth *= 0.7
         mainView.frame = CGRectMake((newBounds.width - viewWidth)/2, (newBounds.height - viewWidth) / 2, viewWidth, viewWidth)
         for i in 0..<size {
             for j in 0..<size {
@@ -188,16 +188,14 @@ class ViewController: UIViewController {
                 }
                 imageView.transform = transform
                 let center: CGFloat = CGFloat(size) / 2
-                let center_2: CGFloat = center * center
-                let i_2: CGFloat = CGFloat(i+1) - center
-                let j_2: CGFloat = CGFloat(j+1) - center
+                let i_2: CGFloat = CGFloat(i) + 0.5 - center
+                let j_2: CGFloat = CGFloat(j) + 0.5 - center
                 let alpha: CGFloat = 1 - (abs(i_2) + abs(j_2)) / CGFloat(size)
-                NSLog("%f %f %d %f", i_2, j_2, size, alpha)
-                if (size != 1) {
-                    imageView.alpha = alpha
-                }
             }
         }
+        let maskView: UIImageView = UIImageView(image: UIImage(named: "mask.png"))
+        maskView.frame = CGRect(x: 0, y: 0, width: mainView.frame.size.width, height: mainView.frame.size.height)
+        mainView.addSubview(maskView)
     }
 
     func createMainViewForCircle(newBounds: CGRect) {
