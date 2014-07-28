@@ -95,6 +95,7 @@ class ViewController: UIViewController {
                             
     override func viewDidLoad() {
         super.viewDidLoad()
+        UIApplication.sharedApplication().idleTimerDisabled = true
         setUpScreenConnectionNotificationHandlers()
         checkForExistingScreenAndInitilaizePresent()
         srand(CUnsignedInt(time(nil)))
