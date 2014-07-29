@@ -19,8 +19,10 @@ class ALBoxViewCreator {
     }
     
     func createView() {
+    }
+    
+    func addObject(size: NSInteger) {
         UIViewAutoresizing.None;
-        let size = 4
         let saturation: CGFloat = randf()
         for i in 0..<size {
             let obj = UIView()

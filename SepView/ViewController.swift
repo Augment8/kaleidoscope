@@ -13,6 +13,18 @@ func randf() -> CGFloat {
     return CGFloat(rand()) / CGFloat(RAND_MAX)
 }
 
+func randi(n: NSNumber) -> NSNumber {
+    return randf() * CGFloat(n)
+}
+
+enum PlusMode {
+    case Plus,Minus
+}
+
+enum ModeType {
+    case Grid,Circle
+}
+
 class ViewController: UIViewController {
     let mainView: UIView = UIView()
     var imageViews: [UIImageView] = []
@@ -20,6 +32,11 @@ class ViewController: UIViewController {
     let creators: [ALBoxViewCreator] = [ALBoxViewCreator(),ALBoxViewCreator()]
     var secondWindow: UIWindow? = nil
     var size: NSInteger = 1
+    var tapAddTimer: NSTimer? = nil
+    var tapPlusMinusTimer: NSTimer? = nil
+    var plusMinusMode: PlusMode = .Plus
+    var modeTimer: NSTimer? = nil
+    var mode: ModeType  = .Grid
 
     class func capturedImageWithView (views: [UIView]) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(views[0].bounds.size, false, 0)
@@ -80,6 +97,11 @@ class ViewController: UIViewController {
             self.view.addSubview(creator.view)
             x += 100
         }
+        
+        tapAddTimer = NSTimer.scheduledTimerWithTimeInterval(2, target: self, selector: "tapAdd:", userInfo: nil, repeats: true)
+        tapPlusMinusTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: "plusMinus", userInfo: nil, repeats: true)
+        
+        modeTimer = NSTimer.scheduledTimerWithTimeInterval(300, target: self, selector: "switchOtherMode", userInfo: nil, repeats: true)
     }
 
     override func didReceiveMemoryWarning() {
@@ -115,8 +137,22 @@ class ViewController: UIViewController {
             subview.removeFromSuperview()
         }
         imageViews = []
-        createMainViewForGrid(newBounds)
-//        createMainViewForCircle(newBounds)
+        switch mode {
+        case .Grid:
+            createMainViewForGrid(newBounds)
+        case .Circle:
+            createMainViewForCircle(newBounds)
+        }
+    }
+    
+    func switchOtherMode() {
+        switch mode {
+        case .Grid:
+            mode = .Circle
+        case .Circle:
+            mode = .Grid
+        }
+        checkForExistingScreenAndInitilaizePresent()
     }
 
     func createMainViewForGrid(newBounds: CGRect) {
@@ -195,17 +231,40 @@ class ViewController: UIViewController {
             setupWindow(newScreen)
         }
     }
-
-    @IBAction func tapPlus(sender: AnyObject) {
+    
+    func plusMinus() {
+        switch plusMinusMode {
+        case .Plus:
+            plus()
+            if size == 10 {
+                plusMinusMode = .Minus
+            }
+        case .Minus:
+            minus()
+            if size == 2 {
+                plusMinusMode = .Plus
+            }
+        }
+    }
+    
+    func plus() {
         size += 1
         createMainView(mainView.superview.frame)
     }
-
-    @IBAction func tapMinus(sender: AnyObject) {
+    
+    func minus() {
         if size > 1 {
             size -= 1
         }
         createMainView(mainView.superview.frame)
+    }
+
+    @IBAction func tapPlus(sender: AnyObject) {
+        plus()
+    }
+
+    @IBAction func tapMinus(sender: AnyObject) {
+        minus()
     }
 
     func handleScreenDidDisconnectNotification(notification: NSNotification) {
@@ -215,8 +274,14 @@ class ViewController: UIViewController {
     }
 
     @IBAction func tapAdd(sender: AnyObject) {
+        let n = creators.map { (var creator) -> Int in return creator.objs.count }.reduce(0, combine: { (let a,let b) -> Int in return a+b })
+        if n > 40 {
+            for creator in creators {
+                creator.reset()
+            }
+        }
         for creator in creators {
-            creator.createView()
+            creator.addObject(randi(3).integerValue+1)
         }
     }
 
