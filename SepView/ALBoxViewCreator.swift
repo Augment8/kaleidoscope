@@ -28,7 +28,9 @@ class ALBoxViewCreator {
             let obj = UIView()
             let width: CGFloat = randf() * 20 + 5
             let height: CGFloat = randf() * 20 + 5
-            obj.frame = CGRectMake(CGFloat(i+14),CGFloat(i+14),width,height)
+            let x: CGFloat = randf() * 60 + 14
+            let y: CGFloat = randf() * 60 + 14
+            obj.frame = CGRectMake(x,y,width,height)
             obj.backgroundColor = UIColor(hue: randf() , saturation: 0.3, brightness: 0.7, alpha: 0.6)
             view.addSubview(obj)
             gravity.addItem(obj)
