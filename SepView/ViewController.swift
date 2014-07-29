@@ -13,61 +13,11 @@ func randf() -> CGFloat {
     return CGFloat(rand()) / CGFloat(RAND_MAX)
 }
 
-class BoxViewCreator {
-    let animator: UIDynamicAnimator
-    let view: UIView = UIView()
-    let gravity: UIGravityBehavior = UIGravityBehavior()
-    var objs: [UIView] = []
-    var collison: UICollisionBehavior = UICollisionBehavior()
-
-    init () {
-        animator = UIDynamicAnimator(referenceView: view)
-        animator.addBehavior(gravity)
-    }
-
-    func createView() {
-        UIViewAutoresizing.None;
-        let size = 4
-        let saturation: CGFloat = randf()
-        for i in 0..<size {
-            let obj = UIView()
-            let width: CGFloat = randf() * 20 + 5
-            let height: CGFloat = randf() * 20 + 5
-            obj.frame = CGRectMake(CGFloat(i+14),CGFloat(i+14),width,height)
-            obj.backgroundColor = UIColor(hue: randf() , saturation: 0.3, brightness: 0.7, alpha: 0.6)
-            view.addSubview(obj)
-            gravity.addItem(obj)
-            collison.addItem(obj)
-            objs.append(obj)
-        }
-        collison.translatesReferenceBoundsIntoBoundary = true
-        animator.addBehavior(collison)
-    }
-
-    func accelerometerHandler(data: CMAccelerometerData!,error: NSError! ) {
-        let x: CDouble = data.acceleration.x
-        let y: CDouble = data.acceleration.y
-        if x != 0 {
-            gravity.angle = CGFloat(atan2(-y, x))
-            gravity.magnitude = CGFloat(sqrt(y*y + x*x)) * 0.2
-        }
-    }
-
-    func reset() {
-        for obj in objs {
-            obj.removeFromSuperview()
-            gravity.removeItem(obj)
-            collison.removeItem(obj)
-        }
-        objs.removeAll(keepCapacity: false)
-    }
-}
-
 class ViewController: UIViewController {
     let mainView: UIView = UIView()
     var imageViews: [UIImageView] = []
     let motionManager: CMMotionManager = CMMotionManager()
-    let creators: [BoxViewCreator] = [BoxViewCreator(),BoxViewCreator()]
+    let creators: [ALBoxViewCreator] = [ALBoxViewCreator(),ALBoxViewCreator()]
     var secondWindow: UIWindow? = nil
     var size: NSInteger = 1
 
@@ -102,13 +52,13 @@ class ViewController: UIViewController {
         self.view.backgroundColor = UIColor.blackColor()
         // Do any additional setup after loading the view, typically from a nib.
         motionManager.accelerometerUpdateInterval = 0.04;
-        for creator: BoxViewCreator in creators {
+        for creator: ALBoxViewCreator in creators {
            creator.createView();
         }
 
         if (self.motionManager.accelerometerAvailable) {
             let handler: CMAccelerometerHandler = { data, error in
-                for creator: BoxViewCreator in self.creators {
+                for creator: ALBoxViewCreator in self.creators {
                     creator.accelerometerHandler(data, error: error)
                 }
             }
@@ -125,7 +75,7 @@ class ViewController: UIViewController {
         displayLink.addToRunLoop(NSRunLoop.currentRunLoop(), forMode: NSRunLoopCommonModes)
 
         var x: CGFloat = 0
-        for creator: BoxViewCreator in creators {
+        for creator: ALBoxViewCreator in creators {
             creator.view.frame = CGRectMake(x, 0, 100, 100)
             self.view.addSubview(creator.view)
             x += 100
