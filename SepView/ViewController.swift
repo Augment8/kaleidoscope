@@ -37,6 +37,7 @@ class ViewController: UIViewController {
     var plusMinusMode: PlusMode = .Plus
     var modeTimer: NSTimer? = nil
     var mode: ModeType  = .Grid
+    var simulatorTimer: NSTimer? = nil
 
     class func capturedImageWithView (views: [UIView]) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(views[0].bounds.size, false, 0)
@@ -102,6 +103,10 @@ class ViewController: UIViewController {
         tapPlusMinusTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: "plusMinus", userInfo: nil, repeats: true)
         
         modeTimer = NSTimer.scheduledTimerWithTimeInterval(300, target: self, selector: "switchOtherMode", userInfo: nil, repeats: true)
+
+        if (!motionManager.accelerometerAvailable) {
+            simulatorTimer = NSTimer.scheduledTimerWithTimeInterval(0.3, target: self, selector: "emulatorAcceleromenter", userInfo: nil, repeats: true)
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -110,15 +115,17 @@ class ViewController: UIViewController {
     }
     
     func loop(link: CADisplayLink) {
-        if (!motionManager.accelerometerAvailable) {
-            for creator in creators {
-                creator.gravity.angle += CGFloat(randf()) * 0.5 + 0.4
-            }
-        }
         let views: [UIView] = creators.map{ (var creator) -> UIView in return creator.view}
         let image: UIImage = ViewController.capturedImageWithView(views)
         for imageView in imageViews {
             imageView.image = image
+        }
+    }
+    
+    func emulatorAcceleromenter() {
+        for creator in creators {
+            creator.gravity.angle = randf() * M_PI * 2
+            creator.gravity.magnitude = 0.2
         }
     }
 
@@ -236,12 +243,12 @@ class ViewController: UIViewController {
         switch plusMinusMode {
         case .Plus:
             plus()
-            if size == 10 {
+            if size == 12 {
                 plusMinusMode = .Minus
             }
         case .Minus:
             minus()
-            if size == 2 {
+            if size == 4 {
                 plusMinusMode = .Plus
             }
         }
