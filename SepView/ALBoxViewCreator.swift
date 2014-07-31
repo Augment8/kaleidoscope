@@ -10,12 +10,14 @@ class ALBoxViewCreator {
     let animator: UIDynamicAnimator
     let view: UIView = UIView()
     let gravity: UIGravityBehavior = UIGravityBehavior()
+    let collison: UICollisionBehavior = UICollisionBehavior()
     var objs: [UIView] = []
-    var collison: UICollisionBehavior = UICollisionBehavior()
     
     init () {
         animator = UIDynamicAnimator(referenceView: view)
         animator.addBehavior(gravity)
+        animator.addBehavior(collison)
+        collison.translatesReferenceBoundsIntoBoundary = true
     }
     
     func createView() {
@@ -37,8 +39,6 @@ class ALBoxViewCreator {
             collison.addItem(obj)
             objs.append(obj)
         }
-        collison.translatesReferenceBoundsIntoBoundary = true
-        animator.addBehavior(collison)
     }
     
     func accelerometerHandler(data: CMAccelerometerData!,error: NSError! ) {
