@@ -8,7 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		900D7C03198761C800C50364 /* ALBoxViewCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900D7C02198761C800C50364 /* ALBoxViewCreator.swift */; };
-		905845371977600B0035BA84 /* mask.png in Resources */ = {isa = PBXBuildFile; fileRef = 905845361977600B0035BA84 /* mask.png */; };
+		902797C7198AA76B00CCFC3F /* mask01.png in Resources */ = {isa = PBXBuildFile; fileRef = 902797C6198AA76B00CCFC3F /* mask01.png */; };
+		902797C9198AA77100CCFC3F /* mask02.png in Resources */ = {isa = PBXBuildFile; fileRef = 902797C8198AA77100CCFC3F /* mask02.png */; };
+		905845371977600B0035BA84 /* mask00.png in Resources */ = {isa = PBXBuildFile; fileRef = 905845361977600B0035BA84 /* mask00.png */; };
 		9098E2B91941E0A500A26FDB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9098E2B81941E0A500A26FDB /* AppDelegate.swift */; };
 		9098E2BB1941E0A500A26FDB /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9098E2BA1941E0A500A26FDB /* ViewController.swift */; };
 		9098E2BE1941E0A500A26FDB /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9098E2BC1941E0A500A26FDB /* Main.storyboard */; };
@@ -28,7 +30,9 @@
 
 /* Begin PBXFileReference section */
 		900D7C02198761C800C50364 /* ALBoxViewCreator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ALBoxViewCreator.swift; sourceTree = "<group>"; };
-		905845361977600B0035BA84 /* mask.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = mask.png; sourceTree = "<group>"; };
+		902797C6198AA76B00CCFC3F /* mask01.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = mask01.png; sourceTree = "<group>"; };
+		902797C8198AA77100CCFC3F /* mask02.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = mask02.png; sourceTree = "<group>"; };
+		905845361977600B0035BA84 /* mask00.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = mask00.png; sourceTree = "<group>"; };
 		9098E2B31941E0A500A26FDB /* SepView.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SepView.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9098E2B71941E0A500A26FDB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9098E2B81941E0A500A26FDB /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -84,7 +88,9 @@
 				900D7C02198761C800C50364 /* ALBoxViewCreator.swift */,
 				9098E2BC1941E0A500A26FDB /* Main.storyboard */,
 				9098E2BF1941E0A500A26FDB /* Images.xcassets */,
-				905845361977600B0035BA84 /* mask.png */,
+				905845361977600B0035BA84 /* mask00.png */,
+				902797C6198AA76B00CCFC3F /* mask01.png */,
+				902797C8198AA77100CCFC3F /* mask02.png */,
 				9098E2B61941E0A500A26FDB /* Supporting Files */,
 			);
 			path = SepView;
@@ -195,9 +201,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				902797C9198AA77100CCFC3F /* mask02.png in Resources */,
 				9098E2BE1941E0A500A26FDB /* Main.storyboard in Resources */,
 				9098E2C01941E0A500A26FDB /* Images.xcassets in Resources */,
-				905845371977600B0035BA84 /* mask.png in Resources */,
+				902797C7198AA76B00CCFC3F /* mask01.png in Resources */,
+				905845371977600B0035BA84 /* mask00.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

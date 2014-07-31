@@ -31,13 +31,15 @@ class ViewController: UIViewController {
     let motionManager: CMMotionManager = CMMotionManager()
     let creators: [ALBoxViewCreator] = [ALBoxViewCreator(),ALBoxViewCreator()]
     var secondWindow: UIWindow? = nil
-    var size: NSInteger = 1
+    var size: NSInteger = 3
     var tapAddTimer: NSTimer? = nil
     var tapPlusMinusTimer: NSTimer? = nil
     var plusMinusMode: PlusMode = .Plus
     var modeTimer: NSTimer? = nil
     var mode: ModeType  = .Grid
     var simulatorTimer: NSTimer? = nil
+    var maskView: UIImageView = UIImageView(image: UIImage(named: "mask00.png"))
+    var maskTimer: NSTimer? = nil
 
     class func capturedImageWithView (views: [UIView]) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(views[0].bounds.size, false, 0)
@@ -63,17 +65,35 @@ class ViewController: UIViewController {
                             
     override func viewDidLoad() {
         super.viewDidLoad()
+        // Do any additional setup after loading the view, typically from a nib.
         UIApplication.sharedApplication().idleTimerDisabled = true
         setUpScreenConnectionNotificationHandlers()
         checkForExistingScreenAndInitilaizePresent()
         srand(CUnsignedInt(time(nil)))
         self.view.backgroundColor = UIColor.blackColor()
-        // Do any additional setup after loading the view, typically from a nib.
-        motionManager.accelerometerUpdateInterval = 0.04;
+
         for creator: ALBoxViewCreator in creators {
            creator.createView();
         }
 
+        setMotion()
+
+        var x: CGFloat = 0
+        for creator: ALBoxViewCreator in creators {
+            creator.view.frame = CGRectMake(x, 0, 100, 100)
+            self.view.addSubview(creator.view)
+            x += 100
+        }
+        
+        setTimers()
+
+        if (!motionManager.accelerometerAvailable) {
+            simulatorTimer = NSTimer.scheduledTimerWithTimeInterval(0.3, target: self, selector: "emulatorAcceleromenter", userInfo: nil, repeats: true)
+        }
+    }
+    
+    func setMotion() {
+        motionManager.accelerometerUpdateInterval = 0.04;
         if (self.motionManager.accelerometerAvailable) {
             let handler: CMAccelerometerHandler = { data, error in
                 for creator: ALBoxViewCreator in self.creators {
@@ -89,24 +109,16 @@ class ViewController: UIViewController {
             }
             motionManager.startDeviceMotionUpdatesToQueue(NSOperationQueue.currentQueue(), withHandler:motionHandler)
         }
+    }
+    
+    func setTimers() {
         let displayLink = CADisplayLink(target: self, selector: "loop:")
         displayLink.addToRunLoop(NSRunLoop.currentRunLoop(), forMode: NSRunLoopCommonModes)
 
-        var x: CGFloat = 0
-        for creator: ALBoxViewCreator in creators {
-            creator.view.frame = CGRectMake(x, 0, 100, 100)
-            self.view.addSubview(creator.view)
-            x += 100
-        }
-        
         tapAddTimer = NSTimer.scheduledTimerWithTimeInterval(2, target: self, selector: "tapAdd:", userInfo: nil, repeats: true)
         tapPlusMinusTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: "plusMinus", userInfo: nil, repeats: true)
-        
         modeTimer = NSTimer.scheduledTimerWithTimeInterval(300, target: self, selector: "switchOtherMode", userInfo: nil, repeats: true)
-
-        if (!motionManager.accelerometerAvailable) {
-            simulatorTimer = NSTimer.scheduledTimerWithTimeInterval(0.3, target: self, selector: "emulatorAcceleromenter", userInfo: nil, repeats: true)
-        }
+        maskTimer = NSTimer.scheduledTimerWithTimeInterval(20, target: self, selector: "randomMask", userInfo: nil, repeats: true)
     }
 
     override func didReceiveMemoryWarning() {
@@ -120,6 +132,11 @@ class ViewController: UIViewController {
         for imageView in imageViews {
             imageView.image = image
         }
+    }
+    
+    func randomMask() {
+        let name = String(format: "mask%02d.png", randi(4).integerValue);
+        maskView.image = UIImage(named: name)
     }
     
     func emulatorAcceleromenter() {
@@ -187,7 +204,6 @@ class ViewController: UIViewController {
                 let alpha: CGFloat = 1 - (abs(i_2) + abs(j_2)) / CGFloat(size)
             }
         }
-        let maskView: UIImageView = UIImageView(image: UIImage(named: "mask.png"))
         maskView.frame = CGRect(x: 0, y: 0, width: mainView.frame.size.width, height: mainView.frame.size.height)
         mainView.addSubview(maskView)
     }
@@ -198,7 +214,6 @@ class ViewController: UIViewController {
         mainView.frame = CGRectMake((newBounds.width - viewWidth)/2, (newBounds.height - viewWidth) / 2, viewWidth, viewWidth)
         let imageRect = CGRect(x: viewWidth / 4, y: 0, width: viewWidth/2, height: viewWidth/2)
         var n: CGFloat = 0
-        let size = 7
         for i in 0..<size {
             let imageView = UIImageView()
             imageView.frame = imageRect
@@ -214,6 +229,7 @@ class ViewController: UIViewController {
             imageView.transform = CGAffineTransformRotate(transform, CGFloat(M_PI) * CGFloat(toggle) / 2)
             n += 360 / CGFloat(size)
         }
+        maskView.removeFromSuperview()
     }
 
     func checkForExistingScreenAndInitilaizePresent() {
